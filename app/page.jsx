@@ -23,15 +23,39 @@ export default function Home() {
   const [absent, setAbsent] = useState(
     students.filter((student) => !student.present).length
   );
+  const [showPopup, setShowPopup] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(null);
+
+  // Name field validation
+  const handleNameChange = (e) => {
+    const value = e.target.value;
+    if (/^[A-Za-z\s]*$/.test(value) || value === "") {
+      setName(value);
+    }
+  };
+
+  // Phone field validation
+  const handlePhoneChange = (e) => {
+    const value = e.target.value;
+    // Allow only digits and dashes
+    if (/^[0-9]{0,3}(-?[0-9]{0,3}){0,2}$/g.test(value) || value === "") {
+      setPhone(value);
+    }
+  };
 
   const handleAddStudent = () => {
     if (name && phone) {
       const newStudent = { name, phone, present: true };
-      setStudents([...students, newStudent]);
+      const updatedStudents = [...students, newStudent];
+      setStudents(updatedStudents);
+
+      // Update total, present, and absent counts
+      setTotal(updatedStudents.length);
+      setPresent(updatedStudents.filter((student) => student.present).length);
+      setAbsent(updatedStudents.filter((student) => !student.present).length);
+
       setName("");
       setPhone("");
-      setTotal(total + 1);
-      setPresent(present + 1);
     }
   };
 
@@ -40,32 +64,28 @@ export default function Home() {
     updatedStudents[index].present = !updatedStudents[index].present;
     setStudents(updatedStudents);
 
-    const presentCount = updatedStudents.filter(
-      (student) => student.present
-    ).length;
-    const absentCount = updatedStudents.filter(
-      (student) => !student.present
-    ).length;
-
-    setPresent(presentCount);
-    setAbsent(absentCount);
+    setPresent(updatedStudents.filter((student) => student.present).length);
+    setAbsent(updatedStudents.filter((student) => !student.present).length);
   };
 
   const handleDelete = (index) => {
+    setSelectedIndex(index);
+    setShowPopup(true);
+  };
+
+  const confirmDelete = () => {
     const updatedStudents = [...students];
-    updatedStudents.splice(index, 1);
+    updatedStudents.splice(selectedIndex, 1);
     setStudents(updatedStudents);
 
-    const presentCount = updatedStudents.filter(
-      (student) => student.present
-    ).length;
-    const absentCount = updatedStudents.filter(
-      (student) => !student.present
-    ).length;
-
-    setPresent(presentCount);
-    setAbsent(absentCount);
+    setPresent(updatedStudents.filter((student) => student.present).length);
+    setAbsent(updatedStudents.filter((student) => !student.present).length);
     setTotal(updatedStudents.length);
+    setShowPopup(false);
+  };
+
+  const cancelDelete = () => {
+    setShowPopup(false);
   };
 
   const handlePhoneClick = (phone) => {
@@ -104,14 +124,14 @@ export default function Home() {
         <input
           type="text"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={handleNameChange}
           placeholder="Enter student name"
           className="border-b-2 w-full py-2 px-4 mb-4 text-gray-800 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
         <input
           type="text"
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          onChange={handlePhoneChange}
           placeholder="Enter student phone number"
           className="border-b-2 w-full py-2 px-4 mb-6 text-gray-800 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
@@ -141,9 +161,7 @@ export default function Home() {
                   className="mr-4"
                 />
                 <span
-                  className={`text-white ${
-                    student.present ? "font-semibold" : "text-red-500"
-                  }`}
+                  className={`text-white ${student.present ? "font-semibold" : "text-red-500"}`}
                 >
                   {student.name}
                 </span>
@@ -164,6 +182,31 @@ export default function Home() {
           ))}
         </ul>
       </div>
+
+      {/* Popup Confirmation */}
+      {showPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg w-1/3 text-center">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Are you sure you want to delete this student?
+            </h3>
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              >
+                Yes
+              </button>
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
